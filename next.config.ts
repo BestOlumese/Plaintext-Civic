@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
           },
           {
              key: 'Content-Security-Policy',
-             value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://utfs.io; font-src 'self' data:; connect-src 'self' https://utfs.io https://generativelanguage.googleapis.com; frame-ancestors 'none';",
+             value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://utfs.io https://uploadthing.com *.uploadthing.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://utfs.io https://uploadthing.com *.uploadthing.com https://generativelanguage.googleapis.com; frame-ancestors 'none';",
           }
         ],
       },

@@ -6,7 +6,13 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export function DeleteDocumentButton({ documentId }: { documentId: string }) {
+export function DeleteDocumentButton({ 
+  documentId,
+  onDelete
+}: { 
+  documentId: string;
+  onDelete?: () => void;
+}) {
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
 
@@ -15,6 +21,9 @@ export function DeleteDocumentButton({ documentId }: { documentId: string }) {
     e.stopPropagation();
 
     if (!confirm("Are you sure you want to delete this document?")) return;
+
+    // Trigger optimistic update
+    onDelete?.();
 
     setIsDeleting(true);
     toast.loading("Deleting document...", { id: `del-${documentId}` });

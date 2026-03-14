@@ -4,7 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -31,6 +31,7 @@ model User {
   sessions           Session[]
   accounts           Account[]
   documents          Document[]
+  folders            Folder[]
 
   @@unique([email])
   @@map("user")
@@ -44,6 +45,9 @@ model Document {
   
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  folderId    String?
+  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   
   simplifications Simplification[]
 
@@ -129,3 +133,16 @@ model Verification {
   @@index([identifier])
   @@map("verification")
 }
+
+model Folder {
+  id        String     @id @default(cuid())
+  name      String
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents Document[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("folder")
+}
+

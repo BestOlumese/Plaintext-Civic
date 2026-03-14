@@ -9,6 +9,9 @@ import Link from "next/link";
 import { ClientDropzone } from "./client-dropzone";
 import { DeleteDocumentButton } from "./delete-button";
 import { decrypt } from "@/lib/encryption";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { DocumentGrid } from "./document-grid";
+import { BarChart3, Clock, Zap } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -21,12 +24,40 @@ export default async function DashboardPage() {
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
     include: {
+      folder: true,
       simplifications: {
         orderBy: { createdAt: "desc" },
-        take: 1
+        take: 1,
+        include: {
+          _count: {
+            select: { glossaryTerms: true }
+          }
+        }
       }
     }
   });
+
+  const folders = await prisma.folder.findMany({
+    where: { userId: session.user.id },
+    orderBy: { name: "asc" }
+  });
+
+  // Decrypt titles and calculate stats
+  let totalWordsSimplified = 0;
+  const decryptedDocs = documents.map(doc => {
+    const latestSimp = doc.simplifications?.[0];
+    if (latestSimp) {
+      // Very rough word count estimation
+      totalWordsSimplified += latestSimp.simplifiedText.split(/\s+/).length;
+    }
+    return {
+      ...doc,
+      decryptedTitle: decrypt(doc.title)
+    };
+  });
+
+  const timeSavedMinutes = Math.round(totalWordsSimplified / 50); // Assumes 50 words per minute reading speed saved
+  const jargonSimplified = documents.reduce((acc, doc) => acc + (doc.simplifications?.[0]?._count?.glossaryTerms || 0), 0);
 
   return (
     <div className="container mx-auto py-10 px-4 lg:px-8 max-w-7xl">
@@ -34,10 +65,11 @@ export default async function DashboardPage() {
         
         <div className="flex flex-row items-start sm:items-center justify-between w-full mb-4">
           <div className="text-left">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Your Documents</h1>
-            <p className="text-slate-500 mt-1 text-lg hidden sm:block">Upload and simplify complex paperwork instantly.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Your Documents</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1 text-lg hidden sm:block">Upload and simplify complex paperwork instantly.</p>
           </div>
-          <div className="shrink-0 ml-4">
+          <div className="shrink-0 ml-4 flex items-center gap-3">
+            <ThemeToggle />
             <Link href="/profile">
               <Button variant="outline" className="gap-2 h-11 px-4 rounded-xl">
                 <Settings2 className="h-4 w-4" />
@@ -48,54 +80,52 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        {/* Usage Insights Widget */}
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="border-blue-100 dark:border-blue-900/30 bg-blue-50/20 dark:bg-blue-900/10 shadow-none">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <BarChart3 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Words Simplified</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalWordsSimplified.toLocaleString()}</h3>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-amber-100 dark:border-amber-900/30 bg-amber-50/20 dark:bg-amber-900/10 shadow-none">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                <Clock className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Reading Time Saved</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{timeSavedMinutes} mins</h3>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/20 dark:bg-emerald-900/10 shadow-none">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <Zap className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Jargon Filtered</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{jargonSimplified} terms</h3>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Quick Upload Area (Client Component wrapper for Sonner/Router hooks) */}
         <ClientDropzone />
 
-        {/* Recent Documents Grid */}
+        {/* Recent Documents Grid with Search & Folders */}
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-6">Recent Translations</h2>
-          {documents.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-              <p className="text-slate-500">You haven't translated any documents yet.</p>
-            </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {documents.map((doc: any) => {
-                const latestSimp = doc.simplifications?.[0];
-                return (
-                  <Card key={doc.id} className="overflow-hidden transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 group border-slate-200">
-                    <CardHeader className="p-5 pb-4 border-b border-slate-50 bg-slate-50/30">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 uppercase tracking-wider">
-                            {latestSimp?.targetLanguage || "English"}
-                          </span>
-                          <span className="text-xs font-medium text-slate-400">
-                            {new Date(doc.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <DeleteDocumentButton documentId={doc.id} />
-                      </div>
-                      <CardTitle className="text-base font-semibold leading-tight group-hover:text-blue-600 transition-colors truncate pr-8">
-                        {decrypt(doc.title)}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-5">
-                      <div className="flex items-center gap-3 text-sm text-slate-500 mb-6">
-                        <FileType2 className="h-4 w-4 text-slate-400" />
-                        <span>Level: <strong className="text-slate-700 font-medium">{latestSimp?.readingLevel || "Original"}</strong></span>
-                      </div>
-                      <Link href={`/dashboard/document/${doc.id}`} className="block">
-                        <Button variant="secondary" className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">
-                          View Simplification
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Your Library</h2>
+          </div>
+          <DocumentGrid initialDocuments={decryptedDocs} folders={folders} />
         </div>
 
       </div>

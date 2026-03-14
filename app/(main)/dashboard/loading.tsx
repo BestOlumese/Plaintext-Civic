@@ -17,8 +17,8 @@ export default function DashboardLoading() {
         </div>
 
         {/* Upload Dropzone Skeleton */}
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-          <div className="mb-6 pb-6 border-b border-slate-100 flex justify-between items-center">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="mb-6 pb-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
              <div className="space-y-2">
                <Skeleton className="h-5 w-40" />
                <Skeleton className="h-4 w-64" />
@@ -33,8 +33,8 @@ export default function DashboardLoading() {
           <Skeleton className="h-7 w-48 mb-6" />
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-                <div className="p-5 pb-4 border-b border-slate-50 bg-slate-50/30 flex justify-between">
+              <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+                <div className="p-5 pb-4 border-b border-slate-50 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/10 flex justify-between">
                   <Skeleton className="h-6 w-20 rounded-md" />
                   <Skeleton className="h-4 w-24" />
                 </div>
