@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  onboarded     Boolean   @default(false)
+  
+  // Custom fields
+  username           String?   @unique
+  displayUsername    String?
+  preferredLanguage  String    @default("en")
+  defaultReadingLevel String   @default("5th-grade")
+
+  sessions           Session[]
+  accounts           Account[]
+  documents          Document[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  originalText String
+  fileUrl     String?
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  simplifications Simplification[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("document")
+}
+
+model Simplification {
+  id              String   @id @default(cuid())
+  simplifiedText  String
+  readingLevel    String   // e.g., "5th-grade", "Summary", "Bullet Points"
+  targetLanguage  String   @default("en")
+  
+  documentId      String
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  glossaryTerms   GlossaryTerm[]
+
+  createdAt       DateTime @default(now())
+
+  @@map("simplification")
+}
+
+model GlossaryTerm {
+  id               String   @id @default(cuid())
+  term             String
+  definition       String
+  
+  simplificationId String
+  simplification   Simplification @relation(fields: [simplificationId], references: [id], onDelete: Cascade)
+
+  createdAt        DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("glossary_term")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
