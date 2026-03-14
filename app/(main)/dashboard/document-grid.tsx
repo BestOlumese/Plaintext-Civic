@@ -37,16 +37,18 @@ export function DocumentGrid({
   folders: any[] 
 }) {
   const [documents, setDocuments] = useState(initialDocuments);
+  const [localFolders, setLocalFolders] = useState(folders);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const router = useRouter();
 
-  // Sync with initialDocuments if they change from parent (e.g. server refresh)
+  // Sync with initialDocuments and folders if they change from parent
   useMemo(() => {
     setDocuments(initialDocuments);
-  }, [initialDocuments]);
+    setLocalFolders(folders);
+  }, [initialDocuments, folders]);
 
   const filteredDocuments = useMemo(() => {
     return documents.filter((doc) => {
@@ -60,19 +62,30 @@ export function DocumentGrid({
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
 
+    const folderName = newFolderName.trim();
+    const tempId = `temp-${Date.now()}`;
+    const previousFolders = [...localFolders];
+    
+    // 1. Optimistic Update
+    setLocalFolders(current => [...current, { id: tempId, name: folderName }]);
+    setNewFolderName("");
+    setIsCreatingFolder(false);
+
     try {
       const res = await fetch("/api/folders", {
         method: "POST",
-        body: JSON.stringify({ name: newFolderName }),
+        body: JSON.stringify({ name: folderName }),
       });
 
       if (!res.ok) throw new Error("Failed to create folder");
 
       toast.success("Folder created");
-      setNewFolderName("");
-      setIsCreatingFolder(false);
       router.refresh();
     } catch (error) {
+      // 2. Rollback
+      setLocalFolders(previousFolders);
+      setNewFolderName(folderName);
+      setIsCreatingFolder(true);
       toast.error("Could not create folder");
     }
   };
@@ -80,7 +93,7 @@ export function DocumentGrid({
   const handleMoveToFolder = async (docId: string, folderId: string | null) => {
     // 1. Optimistic Update
     const previousDocuments = [...documents];
-    const targetFolder = folders.find(f => f.id === folderId);
+    const targetFolder = localFolders.find(f => f.id === folderId);
     
     setDocuments(current => current.map(doc => 
       doc.id === docId ? { ...doc, folderId, folder: targetFolder || null } : doc
@@ -141,7 +154,7 @@ export function DocumentGrid({
           >
             All
           </Button>
-          {folders.map((folder) => (
+          {localFolders.map((folder) => (
             <Button
               key={folder.id}
               variant={activeFolderId === folder.id ? "primary" : "outline"}
@@ -224,7 +237,7 @@ export function DocumentGrid({
                              <X className="h-4 w-4" />
                              No Folder
                           </DropdownMenuItem>
-                          {folders.map((f: any) => (
+                          {localFolders.map((f: any) => (
                             <DropdownMenuItem key={f.id} onClick={() => handleMoveToFolder(doc.id, f.id)} className="flex items-center gap-2">
                                <Folder className="h-4 w-4" />
                                {f.name}

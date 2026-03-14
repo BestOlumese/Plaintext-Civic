@@ -28,9 +28,12 @@ export function ExportPdfButton({ targetRef, documentTitle }: { targetRef: React
   };
 
   return (
-    <Button onClick={handleExport} className="gap-2">
+    <Button 
+      onClick={handleExport} 
+      className="gap-2 rounded-full bg-slate-900 border-white dark:bg-white dark:text-slate-900 px-3 sm:px-5 shadow-lg shadow-slate-500/10 transition-all active:scale-95"
+    >
       <Download className="h-4 w-4" />
-      Export PDF
+      <span className="max-sm:hidden inline">Export PDF</span>
     </Button>
   );
 }

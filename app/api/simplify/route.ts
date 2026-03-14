@@ -131,12 +131,25 @@ export async function POST(req: Request) {
       Additional Task (Glossary):
       - Identify 3 to 5 complex jargon or legal terms present in the text.
       - Define them very simply.
+
+      Additional Task (Loophole Finder):
+      - Identify any unfair terms, hidden fees, rights violations, or unusual clauses.
+      - These are "Red Flags".
+      
+      Additional Task (Visual Redline Mapping):
+      - Create an array of mappings where you take a complex or specific phrase from the source text and map it to its corresponding simplified explanation in your output.
       
       Return your response as a JSON object with EXACTLY the following structure:
       {
         "simplifiedText": "The markdown formatted simplified text goes here...",
         "glossary": [
           { "term": "Jargon Word", "definition": "Simple explanation" }
+        ],
+        "redFlags": [
+          { "term": "Short name for the risk", "explanation": "Detailed warning", "severity": "low|medium|high" }
+        ],
+        "mapping": [
+          { "source": "Original complex phrase", "simplified": "Your simplified version" }
         ]
       }
       
@@ -146,10 +159,10 @@ export async function POST(req: Request) {
       """
     `;
 
-    console.log("Starting simplification and translation...", { readingLevel, targetLanguage });
+    console.log("Starting simplification, translation, and breakthrough analysis...", { readingLevel, targetLanguage });
     const simplifyResult = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: simplifyPrompt,
+      contents: [{ role: "user", parts: [{ text: simplifyPrompt }] }],
       config: {
         responseMimeType: "application/json",
       }
@@ -160,13 +173,15 @@ export async function POST(req: Request) {
 
     const parsedResult = JSON.parse(responseText);
 
-    // 5. Save Simplification to DB
+    // 5. Save Simplification to DB (including Red Flags and Mapping)
     const simplification = await prisma.simplification.create({
       data: {
         documentId: docId,
         simplifiedText: encrypt(parsedResult.simplifiedText),
         readingLevel: readingLevel,
         targetLanguage: targetLanguage,
+        redFlags: parsedResult.redFlags ? encrypt(JSON.stringify(parsedResult.redFlags)) : null,
+        mappingData: parsedResult.mapping ? encrypt(JSON.stringify(parsedResult.mapping)) : null,
       }
     });
 

@@ -60,16 +60,19 @@ model Document {
 }
 
 model Simplification {
-  id              String   @id @default(cuid())
-  simplifiedText  String
-  readingLevel    String   // e.g., "5th-grade", "Summary", "Bullet Points"
-  targetLanguage  String   @default("en")
+  id             String   @id @default(cuid())
+  documentId     String
+  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  simplifiedText String   // Encrypted text
+  readingLevel   String
+  targetLanguage String
+  redFlags       String?  // Encrypted JSON array of risk items
+  mappingData    String?  // Encrypted JSON array for source-to-simplified mapping
   
-  documentId      String
-  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  glossaryTerms   GlossaryTerm[]
+  glossaryTerms GlossaryTerm[]
 
-  createdAt       DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("simplification")
 }

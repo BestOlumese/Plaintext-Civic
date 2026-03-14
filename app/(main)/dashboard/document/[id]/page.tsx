@@ -51,6 +51,8 @@ export default async function DocumentReadingRoom({ params }: { params: { id: st
     simplifications: document.simplifications.map((s: any) => ({
       ...s,
       simplifiedText: decrypt(s.simplifiedText),
+      redFlags: s.redFlags ? JSON.parse(decrypt(s.redFlags)) : null,
+      mappingData: s.mappingData ? JSON.parse(decrypt(s.mappingData)) : null,
       glossaryTerms: s.glossaryTerms.map((g: any) => ({
         ...g,
         definition: decrypt(g.definition)

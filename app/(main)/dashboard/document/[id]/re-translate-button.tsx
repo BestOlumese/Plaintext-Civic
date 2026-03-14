@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Languages, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export function ReTranslateButton({ documentId }: { documentId: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,10 +60,15 @@ export function ReTranslateButton({ documentId }: { documentId: string }) {
         variant="outline" 
         onClick={() => setIsOpen(!isOpen)}
         disabled={isProcessing}
-        className="flex items-center gap-2 border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200"
+        className={cn(
+          "flex items-center gap-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-all active:scale-95",
+          "px-3 sm:px-5", // Default padding for icon-only on mobile, more for text on larger screens
+          "h-9", // Fixed height for consistency
+          isProcessing && "opacity-70 cursor-not-allowed"
+        )}
       >
-        <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
-        <span className="hidden sm:inline">{isProcessing ? "Translating..." : "Re-Translate"}</span>
+        <RefreshCw className={cn("h-4 w-4", isProcessing && "animate-spin")} />
+        <span className="max-sm:hidden inline">{isProcessing ? "Simplifying..." : "Re-Simplify"}</span>
       </Button>
 
       {isOpen && (
