@@ -11,7 +11,15 @@ import { ReTranslateButton } from "./re-translate-button";
 import { TTSPlayer } from "./tts-player";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export function ReadingRoomClient({ document }: { document: any }) {
+import { DocumentChat } from "./document-chat";
+
+export function ReadingRoomClient({
+  document,
+  initialSimplifications,
+}: {
+  document: any;
+  initialSimplifications: any[];
+}) {
   const contentRef = useRef<HTMLDivElement>(null);
   const activeSimplification = document.simplifications?.[0];
 
@@ -242,6 +250,8 @@ export function ReadingRoomClient({ document }: { document: any }) {
             </div>
           )}
       </div>
+
+      <DocumentChat documentId={document.id} />
     </div>
   );
 }
